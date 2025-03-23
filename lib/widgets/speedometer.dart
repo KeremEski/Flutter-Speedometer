@@ -1,3 +1,4 @@
+import 'package:car_multimedia/udp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -11,14 +12,28 @@ class Speedometer extends StatefulWidget {
 
 class _SpeedometerState extends State<Speedometer> {
   final FocusNode _focusNode = FocusNode();
+  final UdpListener _udpListener = UdpListener();
   double speed = 0.0; // Hız değişkeni
   double maxSpeed = 160;
   double rpm = 0.0; // Hız değişkeni
   double maxRpm = 8000;
+  bool _isProcessing = true;
+  String receivedData = "Bekleniyor";
 
   @override
   void initState() {
     _hello();
+    _udpListener.startListening(); // UDP dinleyicisini başlat
+    _udpListener.stream.listen((data) {
+      setState(() {
+        if (!_isProcessing) {
+          speed = data["speed"]!;
+          rpm = data["rpm"]!;
+          print(receivedData);
+        }
+      });
+    });
+
     super.initState();
   }
 
@@ -38,6 +53,7 @@ class _SpeedometerState extends State<Speedometer> {
         speed -= 1;
       });
     }
+    _isProcessing = false;
   }
 
   void _incraseSpeed() {
@@ -45,15 +61,18 @@ class _SpeedometerState extends State<Speedometer> {
     setState(() {
       speed += 10;
     });
-    print(speed);
   }
 
   void _decreaseSpeed() {
-    if (speed <= 0) return;
+    if (speed <= 0) {
+      setState(() {
+        speed = 0;
+      });
+      return;
+    }
     setState(() {
       speed -= 10;
     });
-    print(speed);
   }
 
   void _incraseRpm() {
@@ -64,27 +83,32 @@ class _SpeedometerState extends State<Speedometer> {
   }
 
   void _decreaseRpm() {
-    if (rpm <= 0) return;
+    if (rpm <= 0) {
+      setState(() {
+        rpm = 0;
+      });
+      return;
+    }
     setState(() {
       rpm -= 100;
     });
   }
 
   void _onKey(KeyEvent event) {
+    if (_isProcessing) return;
     if (event is KeyRepeatEvent || event is KeyDownEvent) {
-      // W tuşuna basıldığında hız arttır
-      if (event.logicalKey == LogicalKeyboardKey.keyW) {
+      final keysPressed = HardwareKeyboard.instance.logicalKeysPressed;
+
+      if (keysPressed.contains(LogicalKeyboardKey.keyW)) {
         _incraseSpeed();
       }
-      // S tuşuna basıldığında hız azalt
-      else if (event.logicalKey == LogicalKeyboardKey.keyS) {
+      if (keysPressed.contains(LogicalKeyboardKey.keyS)) {
         _decreaseSpeed();
       }
-      if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      if (keysPressed.contains(LogicalKeyboardKey.arrowUp)) {
         _incraseRpm();
       }
-      // S tuşuna basıldığında hız azalt
-      else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (keysPressed.contains(LogicalKeyboardKey.arrowDown)) {
         _decreaseRpm();
       }
     }
@@ -97,10 +121,9 @@ class _SpeedometerState extends State<Speedometer> {
         focusNode: _focusNode,
         autofocus: true,
         onKeyEvent: _onKey,
-        child: Container(
+        child: SizedBox(
           height: 360,
           width: 700,
-          color: Colors.black,
           child: Stack(
             children: [
               _backPlate(),
@@ -115,7 +138,7 @@ class _SpeedometerState extends State<Speedometer> {
               // RPM Text
               Positioned(top: 213, left: 161, child: _title("RPM")),
               // Hız göstergesi KMH
-              Positioned(top: 100, right: 188, child: _speedNeedle()),
+              Positioned(top: 100, right: 190, child: _speedNeedle()),
               // KMH Value
               Positioned(top: 190, right: 163, child: _value(speed)),
               // KM/H Text
@@ -124,6 +147,8 @@ class _SpeedometerState extends State<Speedometer> {
                 right: 162,
                 child: _title("KM/H"),
               ),
+              // Signals
+              Positioned(top: 40, left: 185, child: _signals())
             ],
           ),
         ),
@@ -192,6 +217,24 @@ class _SpeedometerState extends State<Speedometer> {
         height: 100,
         child: SvgPicture.asset("lib/assets/svg/needle2.svg"),
       ),
+    );
+  }
+
+  _signals() {
+    return Row(
+      children: [
+        SvgPicture.asset(
+          "lib/assets/svg/signal-left.svg",
+          height: 24,
+        ),
+        const SizedBox(
+          width: 280,
+        ),
+        SvgPicture.asset(
+          "lib/assets/svg/signal-right.svg",
+          height: 24,
+        ),
+      ],
     );
   }
 }

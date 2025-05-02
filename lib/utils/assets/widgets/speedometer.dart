@@ -1,11 +1,12 @@
-import 'package:car_multimedia/udp.dart';
+import 'package:car_multimedia/services/udp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 
 class Speedometer extends StatefulWidget {
-  const Speedometer({super.key});
-
+  const Speedometer({super.key, this.height, this.width});
+  final double? height;
+  final double? width;
   @override
   State<Speedometer> createState() => _SpeedometerState();
 }
@@ -19,6 +20,9 @@ class _SpeedometerState extends State<Speedometer> {
   double maxRpm = 8000;
   bool _isProcessing = true;
   String receivedData = "Bekleniyor";
+  String songTitle = "Boş";
+  String songArtist = "Boş";
+  String songAlbum = "Boş";
 
   @override
   void initState() {
@@ -33,7 +37,6 @@ class _SpeedometerState extends State<Speedometer> {
         }
       });
     });
-
     super.initState();
   }
 
@@ -116,39 +119,56 @@ class _SpeedometerState extends State<Speedometer> {
 
   @override
   Widget build(BuildContext context) {
+    double height = widget.height ?? 360;
+    double width = widget.width ?? 700;
+
     return Scaffold(
+      backgroundColor: Colors.black,
       body: KeyboardListener(
         focusNode: _focusNode,
         autofocus: true,
         onKeyEvent: _onKey,
         child: SizedBox(
-          height: 360,
-          width: 700,
+          height: height,
+          width: width,
           child: Stack(
             children: [
               _backPlate(),
               // RPM
               Positioned(
-                top: 100,
-                left: 188,
+                top: height / 3.6,
+                left: width / 3.72340426,
                 child: _rpmNeedle(),
               ),
               // RPM Value
-              Positioned(top: 190, left: 161, child: _value(rpm)),
+              Positioned(
+                  top: height / 1.89473684,
+                  left: width / 4.34782609,
+                  child: _value(rpm)),
               // RPM Text
-              Positioned(top: 213, left: 161, child: _title("RPM")),
+              Positioned(
+                  top: height / 1.69014085,
+                  left: width / 4.34782609,
+                  child: _title("RPM")),
               // Hız göstergesi KMH
-              Positioned(top: 100, right: 190, child: _speedNeedle()),
+              Positioned(
+                  top: height / 3.6,
+                  right: width / 3.68421053,
+                  child: _speedNeedle()),
               // KMH Value
-              Positioned(top: 190, right: 163, child: _value(speed)),
+              Positioned(
+                  top: height / 1.89473684,
+                  right: width / 4.29447853,
+                  child: _value(speed)),
               // KM/H Text
               Positioned(
-                top: 213,
-                right: 162,
+                top: height / 1.69014085,
+                right: width / 4.32098765,
                 child: _title("KM/H"),
               ),
               // Signals
-              Positioned(top: 40, left: 185, child: _signals())
+              Positioned(
+                  top: height / 9, left: width / 3.78378378, child: _signals())
             ],
           ),
         ),

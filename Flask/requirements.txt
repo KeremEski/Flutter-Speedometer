@@ -1,2 +1,7 @@
 Flask
 Requests
+flask-socketio
+eventlet
+pydbus
+dbus-python
+PyGObject
